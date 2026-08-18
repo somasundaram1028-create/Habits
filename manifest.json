@@ -1,0 +1,20 @@
+{
+  "name": "Do It — Habit Tracker",
+  "short_name": "Do It",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#2563eb",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/7518/7518748.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/7518/7518748.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
