@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Do It — Habit Tracker</title>
+<style>
+  :root{
+    --bg:#f7f7f7;
+    --card:#ffffff;
+    --text:#202124;
+    --muted:#777b80;
+    --line:#dedfe1;
+    --green:#22c55e;
+    --green-light:#dff7e7;
+    --red-light:#ffdede;
+    --blue:#3b82f6;
+    --header-bg:#fafafa;
+    --day-cell-border:#eeeeee;
+    --btn-active:#e9e9e9;
+  }
+
+  [data-theme="dark"] {
+    --bg:#121212;
+    --card:#1e1e1e;
+    --text:#e0e0e0;
+    --muted:#a0a0a0;
+    --line:#333333;
+    --green-light:#1b382b;
+    --red-light:#3e1f1f;
+    --header-bg:#181818;
+    --day-cell-border:#2a2a2a;
+    --btn-active:#2c2c2c;
+  }
+
+  *{box-sizing:border-box}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--text);
+    font-family:Arial, Helvetica, sans-serif;
+  }
+
+  .app{
+    max-width:620px;
+    margin:auto;
+    padding:28px 18px 110px;
+  }
+
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:24px;
+    position:relative;
+  }
+
+  h1{
+    margin:0;
+    font-size:30px;
+    font-weight:700;
+  }
+
+  /* 3-Dot Menu Button */
+  .menu-btn {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: var(--text);
+    padding: 4px 8px;
+    border-radius: 50%;
+  }
+
+  .menu-btn:hover {
+    background: var(--btn-active);
+  }
+
+  /* Dropdown Menu */
+  .dropdown {
+    position: absolute;
+    top: 40px;
+    right: 0;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    display: none;
+    flex-direction: column;
+    min-width: 180px;
+    z-index: 30;
+    overflow: hidden;
+  }
+
+  .dropdown.show {
+    display: flex;
+  }
+
+  .dropdown button {
+    background: none;
+    border: none;
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 14px;
+    color: var(--text);
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .dropdown button:hover {
+    background: var(--btn-active);
+  }
+
+  .dropdown button.danger-text {
+    color: #ef4444;
+  }
+
+  .week-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+
+  .week-nav button{
+    width:38px;
+    height:38px;
+    border:0;
+    background:transparent;
+    border-radius:50%;
+    font-size:27px;
+    cursor:pointer;
+    color:var(--text);
+  }
+
+  .week-nav button:active{background:var(--btn-active)}
+
+  .week-title{
+    text-align:center;
+    font-size:16px;
+    font-weight:600;
+  }
+
+  .today-btn{
+    display:block;
+    margin:4px auto 18px;
+    border:0;
+    background:transparent;
+    color:var(--blue);
+    font-weight:600;
+    cursor:pointer;
+  }
+
+  /* Weekly tracker */
+  .tracker{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    overflow:hidden;
+  }
+
+  .week-header,
+  .habit-row{
+    display:grid;
+    grid-template-columns:minmax(115px, 1.7fr) repeat(7, 1fr);
+  }
+
+  .week-header{
+    border-bottom:1px solid var(--line);
+    background:var(--header-bg);
+  }
+
+  .week-header > div{
+    min-width:0;
+    padding:12px 4px;
+    text-align:center;
+    font-size:12px;
+    font-weight:600;
+    color:var(--muted);
+  }
+
+  .week-header .habit-label{
+    text-align:left;
+    padding-left:16px;
+  }
+
+  .week-header .current-day{
+    color:var(--blue);
+  }
+
+  .habit-row{
+    min-height:76px;
+    border-bottom:1px solid var(--line);
+  }
+
+  .habit-row:last-child{border-bottom:0}
+
+  .habit-name{
+    display:flex;
+    align-items:center;
+    padding:10px 8px 10px 16px;
+    min-width:0;
+  }
+
+  .habit-name button{
+    border:0;
+    background:none;
+    color:var(--text);
+    padding:0;
+    text-align:left;
+    font-size:14px;
+    font-weight:600;
+    line-height:1.25;
+    cursor:pointer;
+    width:100%;
+    overflow-wrap:anywhere;
+  }
+
+  .habit-name button:hover{text-decoration:underline}
+
+  .day-cell{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-left:1px solid var(--day-cell-border);
+    padding:9px 4px;
+  }
+
+  .day-toggle{
+    width:100%;
+    max-width:48px;
+    height:48px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    background:var(--card);
+    cursor:pointer;
+    position:relative;
+    transition:.12s ease;
+  }
+
+  .day-toggle:active{transform:scale(.92)}
+
+  .day-toggle.done{
+    background:var(--green-light);
+    border-color:#22c55e;
+  }
+
+  .day-toggle.done::after{
+    content:"✓";
+    color:#22c55e;
+    font-size:22px;
+    font-weight:700;
+  }
+
+  .day-toggle.missed{
+    background:var(--red-light);
+    border-color:#ef4444;
+  }
+
+  .day-toggle.today{
+    outline:2px solid var(--blue);
+    outline-offset:-2px;
+  }
+
+  .day-toggle.future{
+    background:var(--bg);
+    border-style:dashed;
+    cursor:not-allowed;
+    opacity:.65;
+  }
+
+  .empty{
+    text-align:center;
+    background:var(--card);
+    border:1px dashed var(--line);
+    border-radius:18px;
+    padding:38px 20px;
+    color:var(--muted);
+  }
+
+  .empty strong{
+    display:block;
+    color:var(--text);
+    font-size:18px;
+    margin-bottom:8px;
+  }
+
+  .add-bar{
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    padding:14px 18px 20px;
+    background:linear-gradient(to top,var(--bg) 65%,transparent);
+  }
+
+  .add-btn{
+    display:block;
+    width:100%;
+    max-width:584px;
+    margin:auto;
+    border:0;
+    border-radius:14px;
+    padding:16px;
+    background:#2563eb;
+    color:white;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  /* Modal */
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.4);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:20;
+  }
+
+  .overlay.open{display:flex}
+
+  .sheet{
+    width:100%;
+    max-width:620px;
+    max-height:92vh;
+    overflow:auto;
+    background:var(--card);
+    color:var(--text);
+    border-radius:20px 20px 0 0;
+    padding:24px 18px 30px;
+  }
+
+  .sheet h2{
+    margin:0 0 7px;
+    font-size:21px;
+  }
+
+  .sheet p{
+    margin:0 0 16px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.5;
+  }
+
+  input{
+    width:100%;
+    padding:14px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    font-size:16px;
+    outline:none;
+    margin-bottom:14px;
+    background:var(--bg);
+    color:var(--text);
+  }
+
+  input:focus{border-color:var(--blue)}
+
+  .actions{
+    display:flex;
+    gap:10px;
+  }
+
+  .actions button{
+    flex:1;
+    padding:14px;
+    border-radius:10px;
+    border:0;
+    font-weight:700;
+    font-size:15px;
+    cursor:pointer;
+  }
+
+  .cancel{background:var(--btn-active);color:var(--text)}
+  .primary{background:var(--blue);color:#fff}
+  .danger{background:#ef4444;color:#fff}
+
+  /* Month view */
+  .month-nav{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin:6px 0 16px;
+  }
+
+  .month-nav button{
+    width:38px;
+    height:38px;
+    border:0;
+    background:var(--btn-active);
+    color:var(--text);
+    border-radius:50%;
+    font-size:22px;
+    cursor:pointer;
+  }
+
+  .month-name{
+    font-size:16px;
+    font-weight:700;
+  }
+
+  .month-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:5px;
+  }
+
+  .month-weekday{
+    text-align:center;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:700;
+    padding-bottom:4px;
+  }
+
+  .month-day{
+    aspect-ratio:1;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--card);
+    color:var(--text);
+    font-size:11px;
+    cursor:pointer;
+    position:relative;
+  }
+
+  .month-day.done{
+    background:var(--green-light);
+    border-color:#22c55e;
+    color:#22c55e;
+    font-weight:700;
+  }
+
+  .month-day.done::after{
+    content:"✓";
+    position:absolute;
+    right:4px;
+    bottom:2px;
+    font-size:10px;
+  }
+
+  .month-day.missed{
+    background:var(--red-light);
+    border-color:#ef4444;
+  }
+
+  .month-day.today{
+    outline:2px solid var(--blue);
+    outline-offset:-2px;
+  }
+
+  .month-day.future{
+    opacity:.45;
+    cursor:not-allowed;
+  }
+
+  .habit-tools{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+  }
+
+  .small-btn{
+    flex:1;
+    border:1px solid var(--line);
+    background:var(--bg);
+    color:var(--text);
+    border-radius:9px;
+    padding:10px;
+    cursor:pointer;
+    font-weight:600;
+  }
+
+  .small-btn.delete{
+    color:#dc2626;
+  }
+
+  .legend{
+    display:flex;
+    gap:16px;
+    margin-top:14px;
+    color:var(--muted);
+    font-size:12px;
+  }
+
+  .legend span{
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+
+  .dot{
+    width:12px;
+    height:12px;
+    border-radius:4px;
+    border:1px solid var(--line);
+  }
+
+  .dot.green{background:var(--green-light);border-color:#22c55e}
+  .dot.red{background:var(--red-light);border-color:#ef4444}
+
+  .toast{
+    position:fixed;
+    left:50%;
+    bottom:92px;
+    transform:translateX(-50%);
+    background:var(--text);
+    color:var(--bg);
+    padding:10px 16px;
+    border-radius:999px;
+    font-size:13px;
+    display:none;
+    z-index:50;
+  }
+
+  .toast.show{display:block}
+
+  @media(max-width:470px){
+    .app{padding-left:10px;padding-right:10px}
+    .week-header,
+    .habit-row{
+      grid-template-columns:minmax(105px,1.65fr) repeat(7,1fr);
+    }
+    .week-header > div{font-size:10px;padding:11px 2px}
+    .habit-name{padding-left:10px}
+    .habit-name button{font-size:12px}
+    .day-toggle{height:40px;border-radius:8px}
+    .day-cell{padding:7px 2px}
+  }
+</style>
+</head>
+
+<body>
+<div class="app">
+  <header>
+    <h1>Do It</h1>
+    <button class="menu-btn" id="menuBtn" aria-label="Settings">⋮</button>
+    <div class="dropdown" id="menuDropdown">
+      <button id="toggleThemeBtn">Toggle Dark/Light</button>
+      <button id="exportBtn">Export Backup (.json)</button>
+      <button id="importBtn">Import Backup</button>
+      <button id="eraseBtn" class="danger-text">Erase All Data</button>
+    </div>
+  </header>
+
+  <!-- Hidden File Input for Importing -->
+  <input type="file" id="importInput" accept=".json" style="display:none">
+
+  <div class="week-nav">
+    <button id="prevWeek" aria-label="Previous week">‹</button>
+    <div class="week-title" id="weekTitle"></div>
+    <button id="nextWeek" aria-label="Next week">›</button>
+  </div>
+
+  <button class="today-btn" id="todayBtn">Today</button>
+
+  <div id="tracker"></div>
+</div>
+
+<div class="add-bar">
+  <button class="add-btn" id="addHabit">＋ Add habit</button>
+</div>
+
+<!-- Add / rename -->
+<div class="overlay" id="editOverlay">
+  <div class="sheet">
+    <h2 id="editTitle">Add habit</h2>
+    <p id="editDescription">Create a habit you want to track every day.</p>
+    <input id="habitInput" maxlength="50" autocomplete="off">
+    <div class="actions">
+      <button class="cancel" id="cancelEdit">Cancel</button>
+      <button class="primary" id="saveEdit">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Month detail -->
+<div class="overlay" id="monthOverlay">
+  <div class="sheet">
+    <h2 id="monthHabitName"></h2>
+    <p>Monthly tracking for this habit. Tap any completed or missed day to change its status.</p>
+
+    <div class="month-nav">
+      <button id="prevMonth">‹</button>
+      <div class="month-name" id="monthTitle"></div>
+      <button id="nextMonth">›</button>
+    </div>
+
+    <div id="monthCalendar"></div>
+
+    <div class="legend">
+      <span><i class="dot green"></i> Done</span>
+      <span><i class="dot red"></i> Not done</span>
+    </div>
+
+    <div class="habit-tools">
+      <button class="small-btn" id="renameHabit">Rename habit</button>
+      <button class="small-btn delete" id="deleteHabit">Delete habit</button>
+    </div>
+
+    <div class="actions">
+      <button class="cancel" id="closeMonth">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const STORAGE_KEY = "do_it_habits_v1";
+  const THEME_KEY = "do_it_theme_v1";
+
+  let habits = load();
+  let today = startOfDay(new Date());
+  let weekStart = getMonday(today);
+
+  let editingIndex = null;
+  let selectedHabitIndex = null;
+  let monthYear = today.getFullYear();
+  let monthIndex = today.getMonth();
+
+  /* Initialize Theme */
+  const savedTheme = localStorage.getItem(THEME_KEY) || "light";
+  document.documentElement.setAttribute("data-theme", savedTheme);
+
+  function pad(n){ return String(n).padStart(2,"0"); }
+
+  function dateKey(date){
+    return date.getFullYear()+"-"+pad(date.getMonth()+1)+"-"+pad(date.getDate());
+  }
+
+  function startOfDay(d){
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  function getMonday(date){
+    const d = startOfDay(date);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate()+diff);
+    return d;
+  }
+
+  function addDays(date, amount){
+    const d = new Date(date);
+    d.setDate(d.getDate()+amount);
+    return d;
+  }
+
+  function load(){
+    try{
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      return Array.isArray(saved) ? saved : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function save(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
+  }
+
+  function showToast(message){
+    const toast = document.getElementById("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => toast.classList.remove("show"), 1800);
+  }
+
+  function escapeHtml(value){
+    const div = document.createElement("div");
+    div.textContent = value;
+    return div.innerHTML;
+  }
+
+  function sameDate(a,b){
+    return dateKey(a) === dateKey(b);
+  }
+
+  function formatWeek(){
+    const end = addDays(weekStart,6);
+    const options = {month:"short", day:"numeric"};
+    if(weekStart.getFullYear() !== end.getFullYear()){
+      return weekStart.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})
+        +" – "+end.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"});
+    }
+    if(weekStart.getMonth() === end.getMonth()){
+      return weekStart.toLocaleDateString(undefined,{month:"long",day:"numeric"})
+        +" – "+end.getDate();
+    }
+    return weekStart.toLocaleDateString(undefined,options)
+      +" – "+end.toLocaleDateString(undefined,options);
+  }
+
+  function render(){
+    today = startOfDay(new Date());
+    document.getElementById("weekTitle").textContent = formatWeek();
+
+    const tracker = document.getElementById("tracker");
+
+    if(habits.length === 0){
+      tracker.innerHTML = `
+        <div class="empty">
+          <strong>No habits yet</strong>
+          Tap “Add habit” to start tracking.
+        </div>`;
+      return;
+    }
+
+    const days = [];
+    for(let i=0;i<7;i++) days.push(addDays(weekStart,i));
+
+    let html = `
+      <div class="tracker">
+        <div class="week-header">
+          <div class="habit-label">Habit</div>
+          ${days.map(day => `
+            <div class="${sameDate(day,today) ? "current-day" : ""}">
+              ${day.toLocaleDateString(undefined,{weekday:"short"}).charAt(0)}
+              <br>${day.getDate()}
+            </div>
+          `).join("")}
+        </div>`;
+
+    habits.forEach((habit,index) => {
+      html += `<div class="habit-row">
+        <div class="habit-name">
+          <button data-habit-name="${index}" title="Open monthly tracking">
+            ${escapeHtml(habit.name)}
+          </button>
+        </div>`;
+
+      days.forEach(day => {
+        const key = dateKey(day);
+        const done = !!habit.log[key];
+        const future = day > today;
+
+        html += `
+          <div class="day-cell">
+            <button
+              class="day-toggle ${done ? "done" : "missed"} ${sameDate(day,today) ? "today" : ""} ${future ? "future" : ""}"
+              data-habit="${index}"
+              data-key="${key}"
+              ${future ? "disabled" : ""}
+              aria-label="${escapeHtml(habit.name)} ${key}">
+            </button>
+          </div>`;
+      });
+
+      html += `</div>`;
+    });
+
+    html += `</div>`;
+    tracker.innerHTML = html;
+  }
+
+  /* 3-Dot Menu Features */
+  const menuBtn = document.getElementById("menuBtn");
+  const menuDropdown = document.getElementById("menuDropdown");
+
+  menuBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menuDropdown.classList.toggle("show");
+  });
+
+  document.addEventListener("click", () => {
+    menuDropdown.classList.remove("show");
+  });
+
+  // Theme Toggle
+  document.getElementById("toggleThemeBtn").addEventListener("click", () => {
+    const currentTheme = document.documentElement.getAttribute("data-theme");
+    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", newTheme);
+    localStorage.setItem(THEME_KEY, newTheme);
+    showToast(`Switched to ${newTheme} mode`);
+  });
+
+  // Export Backup
+  document.getElementById("exportBtn").addEventListener("click", () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(habits, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `habits_backup_${dateKey(today)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showToast("Backup exported");
+  });
+
+  // Import Backup
+  const importInput = document.getElementById("importInput");
+  document.getElementById("importBtn").addEventListener("click", () => {
+    importInput.click();
+  });
+
+  importInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const importedData = JSON.parse(event.target.result);
+        if (Array.isArray(importedData)) {
+          habits = importedData;
+          save();
+          render();
+          showToast("Data imported successfully");
+        } else {
+          alert("Invalid backup file format.");
+        }
+      } catch (err) {
+        alert("Failed to parse JSON file.");
+      }
+      importInput.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  // Erase Data
+  document.getElementById("eraseBtn").addEventListener("click", () => {
+    if (confirm("Are you sure you want to erase ALL habits and data? This action cannot be undone.")) {
+      habits = [];
+      save();
+      render();
+      showToast("All data erased");
+    }
+  });
+
+  document.getElementById("tracker").addEventListener("click", function(e){
+    const nameButton = e.target.closest("[data-habit-name]");
+    if(nameButton){
+      openMonth(Number(nameButton.dataset.habitName));
+      return;
+    }
+
+    const toggle = e.target.closest(".day-toggle");
+    if(!toggle || toggle.disabled) return;
+
+    const habit = habits[Number(toggle.dataset.habit)];
+    const key = toggle.dataset.key;
+
+    if(habit.log[key]){
+      delete habit.log[key];
+    }else{
+      habit.log[key] = true;
+    }
+
+    save();
+    render();
+  });
+
+  document.getElementById("prevWeek").addEventListener("click",()=>{
+    weekStart = addDays(weekStart,-7);
+    render();
+  });
+
+  document.getElementById("nextWeek").addEventListener("click",()=>{
+    weekStart = addDays(weekStart,7);
+    render();
+  });
+
+  document.getElementById("todayBtn").addEventListener("click",()=>{
+    today = startOfDay(new Date());
+    weekStart = getMonday(today);
+    render();
+  });
+
+  /* Add / rename */
+  const editOverlay = document.getElementById("editOverlay");
+  const habitInput = document.getElementById("habitInput");
+
+  function openEditor(index){
+    editingIndex = index;
+    document.getElementById("editTitle").textContent =
+      index === null ? "Add habit" : "Rename habit";
+    document.getElementById("editDescription").textContent =
+      index === null
+        ? "Create a habit you want to track every day."
+        : "Change the name of this habit. Your tracking history will stay unchanged.";
+
+    habitInput.value = index === null ? "" : habits[index].name;
+    editOverlay.classList.add("open");
+
+    setTimeout(()=>habitInput.focus(),50);
+  }
+
+  function closeEditor(){
+    editOverlay.classList.remove("open");
+    habitInput.value = "";
+    editingIndex = null;
+  }
+
+  document.getElementById("addHabit").addEventListener("click",()=>openEditor(null));
+  document.getElementById("cancelEdit").addEventListener("click",closeEditor);
+
+  document.getElementById("saveEdit").addEventListener("click",()=>{
+    const name = habitInput.value.trim();
+    if(!name) return;
+
+    if(editingIndex === null){
+      habits.push({
+        name:name,
+        log:{},
+        createdAt:dateKey(today)
+      });
+      showToast("Habit added");
+    }else{
+      habits[editingIndex].name = name;
+      showToast("Habit renamed");
+    }
+
+    save();
+    closeEditor();
+    render();
+
+    if(selectedHabitIndex !== null && editingIndex === selectedHabitIndex){
+      document.getElementById("monthHabitName").textContent = name;
+    }
+  });
+
+  habitInput.addEventListener("keydown",(e)=>{
+    if(e.key === "Enter") document.getElementById("saveEdit").click();
+  });
+
+  editOverlay.addEventListener("click",(e)=>{
+    if(e.target === editOverlay) closeEditor();
+  });
+
+  /* Monthly tracking */
+  function openMonth(index){
+    selectedHabitIndex = index;
+    monthYear = today.getFullYear();
+    monthIndex = today.getMonth();
+
+    document.getElementById("monthHabitName").textContent = habits[index].name;
+    renderMonth();
+    document.getElementById("monthOverlay").classList.add("open");
+  }
+
+  function renderMonth(){
+    const habit = habits[selectedHabitIndex];
+    if(!habit) return;
+
+    document.getElementById("monthHabitName").textContent = habit.name;
+    document.getElementById("monthTitle").textContent =
+      new Date(monthYear,monthIndex,1).toLocaleDateString(undefined,{month:"long",year:"numeric"});
+
+    const first = new Date(monthYear,monthIndex,1);
+    const daysInMonth = new Date(monthYear,monthIndex+1,0).getDate();
+
+    /* Monday-first calendar */
+    const firstDay = first.getDay() === 0 ? 6 : first.getDay()-1;
+
+    let html = `<div class="month-grid">
+      ${["M","T","W","T","F","S","S"].map(d=>`<div class="month-weekday">${d}</div>`).join("")}`;
+
+    for(let i=0;i<firstDay;i++){
+      html += `<div></div>`;
+    }
+
+    for(let day=1;day<=daysInMonth;day++){
+      const date = new Date(monthYear,monthIndex,day);
+      const key = dateKey(date);
+      const done = !!habit.log[key];
+      const future = date > today;
+
+      html += `
+        <button
+          class="month-day ${done ? "done" : "missed"} ${sameDate(date,today) ? "today" : ""} ${future ? "future" : ""}"
+          data-month-key="${key}"
+          ${future ? "disabled" : ""}>
+          ${day}
+        </button>`;
+    }
+
+    html += `</div>`;
+    document.getElementById("monthCalendar").innerHTML = html;
+  }
+
+  document.getElementById("monthCalendar").addEventListener("click",(e)=>{
+    const day = e.target.closest("[data-month-key]");
+    if(!day || day.disabled) return;
+
+    const habit = habits[selectedHabitIndex];
+    const key = day.dataset.monthKey;
+
+    if(habit.log[key]) delete habit.log[key];
+    else habit.log[key] = true;
+
+    save();
+    renderMonth();
+    render();
+  });
+
+  document.getElementById("prevMonth").addEventListener("click",()=>{
+    monthIndex--;
+    if(monthIndex < 0){
+      monthIndex=11;
+      monthYear--;
+    }
+    renderMonth();
+  });
+
+  document.getElementById("nextMonth").addEventListener("click",()=>{
+    monthIndex++;
+    if(monthIndex > 11){
+      monthIndex=0;
+      monthYear++;
+    }
+    renderMonth();
+  });
+
+  document.getElementById("closeMonth").addEventListener("click",()=>{
+    document.getElementById("monthOverlay").classList.remove("open");
+    selectedHabitIndex = null;
+  });
+
+  document.getElementById("renameHabit").addEventListener("click",()=>{
+    if(selectedHabitIndex === null) return;
+    const index = selectedHabitIndex;
+    document.getElementById("monthOverlay").classList.remove("open");
+    openEditor(index);
+  });
+
+  document.getElementById("deleteHabit").addEventListener("click",()=>{
+    if(selectedHabitIndex === null) return;
+    const index = selectedHabitIndex;
+
+    if(confirm(`Delete "${habits[index].name}"? This will remove its tracking history.`)){
+      habits.splice(index,1);
+      save();
+      document.getElementById("monthOverlay").classList.remove("open");
+      selectedHabitIndex = null;
+      render();
+      showToast("Habit deleted");
+    }
+  });
+
+  document.getElementById("monthOverlay").addEventListener("click",(e)=>{
+    if(e.target === document.getElementById("monthOverlay")){
+      document.getElementById("monthOverlay").classList.remove("open");
+      selectedHabitIndex = null;
+    }
+  });
+
+  /* Refresh when the device date changes */
+  setInterval(()=>{
+    const fresh = startOfDay(new Date());
+    if(!sameDate(fresh,today)){
+      today = fresh;
+      weekStart = getMonday(today);
+      render();
+    }
+  },60000);
+
+  render();
+})();
+</script>
+</body>
+</html>
